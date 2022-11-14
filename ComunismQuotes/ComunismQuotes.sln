@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lib", "..\Lib\Lib.csproj", "{AD2DC160-446B-420E-BE82-42786ED82ECA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MrCrawler", "..\MrCrawler\MrCrawler.csproj", "{F8A1E01C-C3CA-48ED-AEBA-1EF92E0AFD75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eleicoes", "..\Eleicoes\Eleicoes.csproj", "{97AFC6D1-FC31-4A42-B4A8-C534F3A95AF4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AD2DC160-446B-420E-BE82-42786ED82ECA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD2DC160-446B-420E-BE82-42786ED82ECA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD2DC160-446B-420E-BE82-42786ED82ECA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD2DC160-446B-420E-BE82-42786ED82ECA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8A1E01C-C3CA-48ED-AEBA-1EF92E0AFD75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8A1E01C-C3CA-48ED-AEBA-1EF92E0AFD75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8A1E01C-C3CA-48ED-AEBA-1EF92E0AFD75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8A1E01C-C3CA-48ED-AEBA-1EF92E0AFD75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97AFC6D1-FC31-4A42-B4A8-C534F3A95AF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97AFC6D1-FC31-4A42-B4A8-C534F3A95AF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97AFC6D1-FC31-4A42-B4A8-C534F3A95AF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97AFC6D1-FC31-4A42-B4A8-C534F3A95AF4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
