@@ -1,6 +1,7 @@
-using Lib.Contracts;
 
-namespace Lib.Abstractions
+using Lib.Crawler.Contracts;
+
+namespace Lib.Crawler.Abstractions
 {
     public abstract class BaseCrawlerDriver : ICrawlerDriver
     {

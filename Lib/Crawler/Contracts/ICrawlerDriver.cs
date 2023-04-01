@@ -1,4 +1,4 @@
-namespace Lib.Contracts
+namespace Lib.Crawler.Contracts
 {
     public interface ICrawlerDriver
     {

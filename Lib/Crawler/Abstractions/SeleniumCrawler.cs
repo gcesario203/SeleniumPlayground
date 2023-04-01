@@ -1,7 +1,6 @@
-using Lib.Abstractions;
 using OpenQA.Selenium;
 
-namespace Lib.Abstractions
+namespace Lib.Crawler.Abstractions
 {
     public abstract class SeleniumCrawler : BaseCrawlerDriver
     {

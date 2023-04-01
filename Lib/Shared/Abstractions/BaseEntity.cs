@@ -1,14 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
-using Lib.Contracts;
+using Lib.Shared.Contracts;
 
-namespace Lib.Abstractions
+namespace Lib.Shared.Abstractions
 {
     public abstract class BaseEntity : IBaseEntity
     {
-        public string Id {get; private set;}
-        public DateTime CreatedDate {get;private set;}
+        private string Id;
+        private DateTime CreatedDate;
 
-        public DateTime UpdatedDate { get; private set; }
+        private DateTime UpdatedDate;
 
         public BaseEntity()
         {
@@ -31,5 +31,14 @@ namespace Lib.Abstractions
         {
             return entity?.GetType().GetProperty("Id")?.GetValue(entity)?.ToString() ?? null;
         }
+
+        public string GetId()
+            => Id;
+
+        public DateTime GetCreationDate()
+            => CreatedDate;
+            
+        public DateTime GetUpdateDate()
+            => UpdatedDate;
     }
 }

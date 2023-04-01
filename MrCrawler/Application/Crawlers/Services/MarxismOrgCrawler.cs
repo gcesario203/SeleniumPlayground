@@ -1,7 +1,7 @@
-using Lib.Contracts;
+using Lib.Crawler.Contracts;
 using Lib.Services;
 
-namespace MrCrawler.Services
+namespace MrCrawler.Application.Crawlers.Services
 {
     public class MarxismOrgCrawlerService : ICrawlerService
     {
@@ -13,7 +13,15 @@ namespace MrCrawler.Services
         }
         public void Run()
         {
-            _crawlerDriver.Crawl();
+            try
+            {
+                _crawlerDriver.Crawl();
+            }
+            catch (System.Exception ex)
+            {
+                System.Console.WriteLine(ex.Message);
+                _crawlerDriver.Dispose();
+            }
         }
     }
 }
