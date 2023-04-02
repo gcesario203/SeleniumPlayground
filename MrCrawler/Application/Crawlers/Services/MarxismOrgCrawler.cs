@@ -1,5 +1,5 @@
+using Lib.Contracts;
 using Lib.Crawler.Contracts;
-using Lib.Services;
 
 namespace MrCrawler.Application.Crawlers.Services
 {

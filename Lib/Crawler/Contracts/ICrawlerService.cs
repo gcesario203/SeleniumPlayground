@@ -1,4 +1,4 @@
-namespace Lib.Services
+namespace Lib.Contracts
 {
     public interface ICrawlerService
     {
