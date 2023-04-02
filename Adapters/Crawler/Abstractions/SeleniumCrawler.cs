@@ -5,13 +5,23 @@ namespace Adapters.Crawler.Abstractions
 {
     public abstract class SeleniumCrawler : BaseCrawlerDriver
     {
+        private readonly Type SeleniumDriverType;
         public IWebDriver Driver { get; protected set; }
-        public SeleniumCrawler(string baseUrl, string driverPath, int instanceNumber) : base(baseUrl, driverPath, instanceNumber)
+        public SeleniumCrawler(string baseUrl, string driverPath, int instanceNumber, Type seleniumDriverType) : base(baseUrl, driverPath, instanceNumber)
         {
+            SeleniumDriverType = seleniumDriverType;
             SetDriver();
         }
 
-        protected abstract void SetDriver();
+        protected virtual void SetDriver()
+        {
+            if(SeleniumDriverType == null)
+                throw new Exception("ERRO: Tipo de driver não declarado");
+
+            Driver = Activator.CreateInstance(SeleniumDriverType, DriverPath) as IWebDriver;
+
+            Driver.Url = BaseUrl;
+        }
 
         public override abstract void Crawl();
 

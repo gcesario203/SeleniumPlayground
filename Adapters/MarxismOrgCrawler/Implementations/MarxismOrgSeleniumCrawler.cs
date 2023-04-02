@@ -9,7 +9,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
     public class MarxismOrgSeleniumCrawler : SeleniumCrawler
     {
         private readonly int AuthorPerDriver = Constants.AUTHORS_PER_DRIVER;
-        public MarxismOrgSeleniumCrawler(string baseUrl, string driverPath, int instanceNumber) : base(baseUrl, driverPath, instanceNumber)
+        public MarxismOrgSeleniumCrawler(string baseUrl, string driverPath, int instanceNumber, Type seleniumDriverType) : base(baseUrl, driverPath, instanceNumber, seleniumDriverType)
         {
         }
 
@@ -34,9 +34,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
         protected override void SetDriver()
         {
-            Driver = new EdgeDriver(DriverPath);
-
-            Driver.Url = BaseUrl;
+            base.SetDriver();
         }
 
         private IEnumerable<AuthorDataObject> GetAuthorsAndTheirJobs()

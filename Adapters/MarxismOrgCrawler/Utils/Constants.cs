@@ -1,3 +1,5 @@
+using OpenQA.Selenium.Edge;
+
 namespace Adapters.MarxismOrgCrawler.Utils
 {
     public static class Constants
@@ -9,5 +11,7 @@ namespace Adapters.MarxismOrgCrawler.Utils
         public readonly static int AUTHORS_PER_DRIVER = 113;
 
         public readonly static int NUMBER_OF_DRIVERS = 4;
+
+        public readonly static Type SELENIUM_DRIVER_TYPE = typeof(EdgeDriver);
     }
 }
