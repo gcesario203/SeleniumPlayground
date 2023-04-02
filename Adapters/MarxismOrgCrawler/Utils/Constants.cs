@@ -8,9 +8,9 @@ namespace Adapters.MarxismOrgCrawler.Utils
 
         public readonly static string LINK_TO_CRAWL = "https://www.marxists.org/portugues/index.htm";
 
-        public readonly static int AUTHORS_PER_DRIVER = 113;
+        public readonly static int AUTHORS_PER_DRIVER = 1;
 
-        public readonly static int NUMBER_OF_DRIVERS = 4;
+        public readonly static int NUMBER_OF_DRIVERS = 1;
 
         public readonly static Type SELENIUM_DRIVER_TYPE = typeof(EdgeDriver);
     }

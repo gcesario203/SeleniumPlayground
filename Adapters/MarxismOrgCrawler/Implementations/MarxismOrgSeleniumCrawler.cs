@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Adapters.Crawler.Abstractions;
 using Adapters.MarxismOrgCrawler.DataObjects;
 using Adapters.MarxismOrgCrawler.Utils;
@@ -30,11 +31,6 @@ namespace Adapters.MarxismOrgCrawler.Enums
             };
 
             Dispose();
-        }
-
-        protected override void SetDriver()
-        {
-            base.SetDriver();
         }
 
         private IEnumerable<AuthorDataObject> GetAuthorsAndTheirJobs()
@@ -231,7 +227,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
             if (webElement == null)
                 return false;
 
-            if (webElement.TagName == "h4")
+            if ( Regex.IsMatch(webElement.TagName, "([h1]{1}[1-9]{1})") )
                 return true;
 
             if (webElement.TagName == "p" && webElement.FindElements(By.XPath(".//*")).Select(x => x.TagName).Contains("strong"))
