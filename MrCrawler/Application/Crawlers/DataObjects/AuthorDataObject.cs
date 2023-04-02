@@ -1,6 +1,8 @@
+using Lib.Shared.Abstractions;
+
 namespace MrCrawler.Application.Crawlers.DataObjects
 {
-    public class AuthorDataObject
+    public class AuthorDataObject : BaseEntity
     {
         public string Name { get; set; }
 
@@ -8,9 +10,9 @@ namespace MrCrawler.Application.Crawlers.DataObjects
 
         public string Biography { get; set; }
 
-        public IEnumerable<string> WorkLinks { get; set; }
+        public IEnumerable<WorkLink> WorkLinks { get; set; }
 
-        public AuthorDataObject(string name, string lifePeriod, string biography, IEnumerable<string> workLinks)
+        public AuthorDataObject(string name, string lifePeriod, string biography, IEnumerable<WorkLink> workLinks) : base()
         {
             Name = name;
             LifePeriod = lifePeriod;

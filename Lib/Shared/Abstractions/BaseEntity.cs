@@ -5,10 +5,10 @@ namespace Lib.Shared.Abstractions
 {
     public abstract class BaseEntity : IBaseEntity
     {
-        private string Id;
-        private DateTime CreatedDate;
+        protected string Id;
+        protected DateTime CreatedDate;
 
-        private DateTime UpdatedDate;
+        protected DateTime UpdatedDate;
 
         public BaseEntity()
         {

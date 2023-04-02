@@ -13,43 +13,19 @@ namespace MrCrawler.Application.Crawlers.Implementations
 
         public override void Crawl()
         {
-            GetAuthorsAndTheirJobs();
+            var authors = GetAuthorsAndTheirJobs();
 
-            // foreach (var joblink in jobLinks)
-            // {
+            var authorContents = new List<WorkContent>();
 
-            //     if (!joblink.Contains("htm"))
-            //         continue;
+            foreach (var author in authors)
+            {
+                var parsedAuthorContents = GetAuthorWork(author);
 
-            //     Driver.Url = joblink;
+                if (parsedAuthorContents?.Count() == 0)
+                    continue;
 
-            //     Driver.Navigate();
-
-            //     var bodyXpath = Driver.FindElements(By.TagName("body")).FirstOrDefault();
-
-            //     var children = bodyXpath.FindElements(By.XPath(".//*")).ToList();
-
-            //     var teste = new Dictionary<string?, List<string?>>();
-
-            //     foreach (var articleElement in children)
-            //     {
-            //         var aaa = articleElement.TagName;
-            //         if (articleElement.TagName != "h4" && articleElement.TagName != "p")
-            //             continue;
-
-            //         if (articleElement.TagName == "h4" && teste.Keys.Contains(articleElement.Text))
-            //             continue;
-            //         else if (articleElement.TagName == "h4")
-            //             teste.Add(articleElement.Text, new List<string?>());
-
-            //         if (articleElement.TagName == "p" && teste.Keys.Count > 0)
-            //             teste[teste.Keys.LastOrDefault()].Add(articleElement.Text);
-            //     }
-
-            //     Driver.Navigate().Back();
-            // }
-
-            Driver.Navigate().Back();
+                authorContents.AddRange(parsedAuthorContents);
+            };
 
             Dispose();
         }
@@ -96,6 +72,9 @@ namespace MrCrawler.Application.Crawlers.Implementations
 
                 authorList.Add(authorObj);
 
+                if (authorList.Count > 0)
+                    break;
+
                 Driver.Navigate().Back();
 
                 GetAuthorsSelectOnFirstPage(true);
@@ -136,7 +115,10 @@ namespace MrCrawler.Application.Crawlers.Implementations
                 var biography = String.Join("\n", Driver.FindElements(By.CssSelector("p.texto-sem-espaco")).Select(x => x.Text));
 
                 /// Pego todos os links das obras do autor
-                var jobLinks = Driver.FindElement(By.CssSelector("table.tabela-obras")).FindElements(By.TagName("a")).Select(x => x.GetAttribute("href")).ToList();
+                var jobLinks = Driver.FindElement(By.CssSelector("table.tabela-obras"))
+                                     .FindElements(By.TagName("a"))
+                                     .Select(x => new WorkLink(x.Text, x.GetAttribute("href")))
+                                     .ToList();
 
                 return new AuthorDataObject(authorName, lifeYears, biography, jobLinks);
             }
@@ -146,6 +128,116 @@ namespace MrCrawler.Application.Crawlers.Implementations
 
                 return null;
             }
+        }
+
+        private IEnumerable<WorkContent> GetAuthorWork(AuthorDataObject author)
+        {
+            if (author?.WorkLinks.Count() == 0)
+                return null;
+
+            var returnList = new List<WorkContent>();
+
+            foreach (var joblink in author.WorkLinks)
+            {
+                try
+                {
+                    var workContentToBeAdded = GetFileContentByJobLink(joblink, author);
+
+                    if(workContentToBeAdded == null)
+                        continue;
+
+                    returnList.Add(workContentToBeAdded);
+                }
+                catch (System.Exception ex)
+                {
+                    System.Console.WriteLine($"ERRO: Erro ao buscar obra a {joblink.Title} do autor {author.Name}: {ex.Message}");
+                    return null;
+                }
+            }
+
+            return returnList;
+        }
+
+        private WorkContent? GetFileContentByJobLink(WorkLink jobLink, AuthorDataObject author)
+        {
+            /// SIMPLE HTML
+            if (jobLink.Link.Contains("htm") && !jobLink.Link.Contains("index.htm"))
+            {
+                return PrepareSimpleHtmlWorkContent(jobLink, author);
+            }
+
+            // CHAINED HTML
+            if (jobLink.Link.Contains("index.htm"))
+            {
+                return null;
+            }
+
+            // FILE CONTENT
+            return null;
+        }
+
+        private WorkContent? PrepareSimpleHtmlWorkContent(WorkLink jobLink, AuthorDataObject author)
+        {
+            try
+            {
+                Driver.Url = jobLink.Link;
+
+                Driver.Navigate();
+
+                var bodyXpath = Driver.FindElements(By.TagName("body")).FirstOrDefault();
+
+                var children = bodyXpath.FindElements(By.XPath(".//*")).ToList();
+
+                var article = new Dictionary<string?, List<string?>>();
+
+                var lastHr = children.LastOrDefault(x => x.TagName == "hr");
+
+                var firstHr = children.LastOrDefault(x => x.TagName == "hr" && x.Location != lastHr.Location);
+
+                foreach (var childElement in children.Skip(children.IndexOf(firstHr)).Take(children.IndexOf(lastHr) - children.IndexOf(firstHr)))
+                {
+                    var isTitle = CheckIfElementIsATitle(childElement);
+
+                    if (!isTitle && childElement.TagName != "p")
+                        continue;
+
+                    if (isTitle)
+                    {
+                        article.Add(childElement.Text, new List<string?>());
+
+                        continue;
+                    }
+
+                    if (childElement.TagName == "p" && childElement.Text != "Início da página")
+                    {
+                        if (article.Keys.Count == 0)
+                            article.Add("NoTitle", new List<string?>());
+
+                        article[article.Keys.LastOrDefault()].Add(childElement.Text);
+                    }
+                }
+
+                return new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, article, Enums.WorkType.HTML_SIMPLE_CONTENT);
+            }
+            catch (System.Exception ex)
+            {
+                System.Console.WriteLine($"ERRO: Erro ao buscar obra a {jobLink.Title} do autor {author.Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private bool CheckIfElementIsATitle(IWebElement? webElement)
+        {
+            if (webElement == null)
+                return false;
+
+            if (webElement.TagName == "h4")
+                return true;
+
+            if (webElement.TagName == "p" && webElement.FindElements(By.XPath(".//*")).Select(x => x.TagName).Contains("strong"))
+                return true;
+
+            return false;
         }
     }
 }
