@@ -8,15 +8,15 @@ namespace Adapters.MarxismOrgCrawler.DataObjects
 
         public string Title { get; private set; }
 
-        public WorkContent? Parent { get; private set; }
+        public string Parent { get; private set; }
 
-        public Dictionary<string, List<string?>> Content { get; private set; }
+        public string Content { get; private set; }
 
-        public string FileContent { get; private set; }
+        public byte[] FileContent { get; private set; }
 
         public Enums.WorkType Type { get; private set; }
 
-        public WorkContent(string id, string authorId, string title, Dictionary<string, List<string?>> content, Enums.WorkType type, WorkContent parent = null)
+        public WorkContent(string id, string authorId, string title, string content, Enums.WorkType type, string parent = null)
         {
             AuthorId = authorId;
             Title = title;
@@ -27,7 +27,7 @@ namespace Adapters.MarxismOrgCrawler.DataObjects
             Parent = parent;
         }
 
-        public WorkContent(string id, string authorId, string title, string fileContent, Enums.WorkType type, WorkContent parent = null)
+        public WorkContent(string id, string authorId, string title, byte[] fileContent, Enums.WorkType type, string parent = null)
         {
             AuthorId = authorId;
             Title = title;

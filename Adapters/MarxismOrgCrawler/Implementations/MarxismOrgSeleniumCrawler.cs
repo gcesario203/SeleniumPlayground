@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using Adapters.Crawler.Abstractions;
 using Adapters.MarxismOrgCrawler.DataObjects;
@@ -41,13 +43,13 @@ namespace Adapters.MarxismOrgCrawler.Enums
             var authorsSelect = GetAuthorsSelectOnFirstPage();
 
             // Pega todos os autores do select da esquerda
-            var authors = authorsSelect.Text.Split("\r\n").ToList();
+            var authors = authorsSelect.Text.Split("\r\n").Where(x => x == "Bakunin, Mikhail").ToList();
 
             // Remove o placeholder do select
-            authors.RemoveAt(0);
+            // authors.RemoveAt(0);
 
-            if(InstanceNumber > 0)
-                authors = authors.Skip( (InstanceNumber - 1) * AuthorPerDriver ).Take(AuthorPerDriver).ToList();
+            if (InstanceNumber > 0)
+                authors = authors.Skip((InstanceNumber - 1) * AuthorPerDriver).Take(AuthorPerDriver).ToList();
 
             /// Clica no select de autores
             authorsSelect.Click();
@@ -154,9 +156,9 @@ namespace Adapters.MarxismOrgCrawler.Enums
             return returnList;
         }
 
-        private IEnumerable<WorkContent?> GetFileContentByJobLink(WorkLink jobLink, AuthorDataObject author, WorkContent parent = null)
+        private IEnumerable<WorkContent?> GetFileContentByJobLink(WorkLink jobLink, AuthorDataObject author, string parent = null)
         {
-            if(string.IsNullOrEmpty(jobLink.Link) || !jobLink.Link.Split('/').Contains("portugues"))
+            if (string.IsNullOrEmpty(jobLink.Link) || !jobLink.Link.Split('/').Contains("portugues"))
                 return null;
 
             /// SIMPLE HTML
@@ -170,10 +172,10 @@ namespace Adapters.MarxismOrgCrawler.Enums
                 return PrepareChainedHtmlWorkContent(jobLink, author, parent);
 
             // FILE CONTENT
-            return null;
+            return PrepareFileWorkContent(jobLink, author, parent);
         }
 
-        private IEnumerable<WorkContent?> PrepareSimpleHtmlWorkContent(WorkLink jobLink, AuthorDataObject author, WorkContent parent = null)
+        private IEnumerable<WorkContent?> PrepareSimpleHtmlWorkContent(WorkLink jobLink, AuthorDataObject author, string parent = null)
         {
             try
             {
@@ -185,35 +187,14 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
                 var children = GetMarxismoOrgContentBetweenHrTags(bodyXpath.FindElements(By.XPath(".//*")).ToList());
 
-                if(children?.Count() == 0)
+                if (children?.Count() == 0)
                     return null;
-                
-                var article = new Dictionary<string?, List<string?>>();
 
-                foreach (var childElement in children)
-                {
-                    var isTitle = CheckIfElementIsATitle(childElement);
+                var rawHtmlContent = string.Join("<br/>", children.Select(x =>$"<{x.TagName}>{x.Text}<{x.TagName}/>")
+                                                                  .Where(x => !x.Contains("Início da página"))
+                                                );
 
-                    if (!isTitle && childElement.TagName != "p")
-                        continue;
-
-                    if (isTitle)
-                    {
-                        article.Add(childElement.Text, new List<string?>());
-
-                        continue;
-                    }
-
-                    if (childElement.TagName == "p" && childElement.Text != "Início da página")
-                    {
-                        if (article.Keys.Count == 0)
-                            article.Add("NoTitle", new List<string?>());
-
-                        article[article.Keys.LastOrDefault()].Add(childElement.Text);
-                    }
-                }
-
-                return new List<WorkContent?>(){ new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, article, Enums.WorkType.HTML_SIMPLE_CONTENT, parent) };
+                return new List<WorkContent?>() { new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, rawHtmlContent, Enums.WorkType.HTML_SIMPLE_CONTENT, parent) };
             }
             catch (System.Exception ex)
             {
@@ -227,7 +208,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
             if (webElement == null)
                 return false;
 
-            if ( Regex.IsMatch(webElement.TagName, "([h1]{1}[1-9]{1})") )
+            if (Regex.IsMatch(webElement.TagName, "([h1]{1}[1-9]{1})"))
                 return true;
 
             if (webElement.TagName == "p" && webElement.FindElements(By.XPath(".//*")).Select(x => x.TagName).Contains("strong"))
@@ -236,7 +217,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
             return false;
         }
 
-        private IEnumerable<WorkContent?> PrepareChainedHtmlWorkContent(WorkLink jobLink, AuthorDataObject author, WorkContent parent = null)
+        private IEnumerable<WorkContent?> PrepareChainedHtmlWorkContent(WorkLink jobLink, AuthorDataObject author, string parent = null)
         {
             try
             {
@@ -254,13 +235,13 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
                 var indexWorkContent = new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, string.Empty, WorkType.HTML_CHAINED_CONTENT, parent);
 
-                var returnList = new List<WorkContent?>(){ indexWorkContent };
+                var returnList = new List<WorkContent?>() { indexWorkContent };
 
-                foreach(var jobLinkArticle in jobLinksArticle)
+                foreach (var jobLinkArticle in jobLinksArticle)
                 {
-                    var childArticles = GetFileContentByJobLink(jobLinkArticle, author, indexWorkContent);
+                    var childArticles = GetFileContentByJobLink(jobLinkArticle, author, indexWorkContent.GetId());
 
-                    if(childArticles?.Count() == 0)
+                    if (childArticles?.Count() == 0)
                         continue;
 
                     returnList.AddRange(childArticles);
@@ -285,6 +266,14 @@ namespace Adapters.MarxismOrgCrawler.Enums
             var firstHr = webElements.LastOrDefault(x => x.TagName == "hr" && x.Location != lastHr.Location);
 
             return webElements.Skip(webElements.IndexOf(firstHr)).Take(webElements.IndexOf(lastHr) - webElements.IndexOf(firstHr));
+        }
+
+        private IEnumerable<WorkContent?> PrepareFileWorkContent(WorkLink jobLink, AuthorDataObject author, string parent = null)
+        {
+            var downloadedFile = new HttpClient().GetStringAsync(jobLink.Link).GetAwaiter().GetResult();
+
+            var fileWorkContent = new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, Encoding.ASCII.GetBytes(downloadedFile), WorkType.FILE_CONTENT, parent);
+            return new List<WorkContent?> { fileWorkContent };
         }
     }
 }
