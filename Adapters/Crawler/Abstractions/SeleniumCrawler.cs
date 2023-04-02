@@ -6,7 +6,7 @@ namespace Adapters.Crawler.Abstractions
     public abstract class SeleniumCrawler : BaseCrawlerDriver
     {
         public IWebDriver Driver { get; protected set; }
-        public SeleniumCrawler(string baseUrl, string driverPath) : base(baseUrl, driverPath)
+        public SeleniumCrawler(string baseUrl, string driverPath, int instanceNumber) : base(baseUrl, driverPath, instanceNumber)
         {
             SetDriver();
         }

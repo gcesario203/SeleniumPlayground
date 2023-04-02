@@ -2,7 +2,11 @@
 using Adapters.MarxismOrgCrawler.Services;
 using Adapters.MarxismOrgCrawler.Utils;
 
-var teste = new MarxismOrgCrawlerService(new MarxismOrgSeleniumCrawler(Constants.LINK_TO_CRAWL, Constants.DRIVER_PATH));
 
+for (var x = 1; x <= Constants.NUMBER_OF_DRIVERS; x++)
+{
+    var teste = new MarxismOrgCrawlerService(new MarxismOrgSeleniumCrawler(Constants.LINK_TO_CRAWL, Constants.DRIVER_PATH, x));
 
-teste.Run();
+    Thread thread = new Thread(() => teste.Run());
+    thread.Start();
+}

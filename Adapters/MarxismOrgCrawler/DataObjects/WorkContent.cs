@@ -24,6 +24,7 @@ namespace Adapters.MarxismOrgCrawler.DataObjects
             Id = id;
             CreatedDate = DateTime.Now;
             Type = type;
+            Parent = parent;
         }
 
         public WorkContent(string id, string authorId, string title, string fileContent, Enums.WorkType type, WorkContent parent = null)
@@ -34,6 +35,7 @@ namespace Adapters.MarxismOrgCrawler.DataObjects
             Id = id;
             CreatedDate = DateTime.Now;
             Type = type;
+            Parent = parent;
         }
     }
 }

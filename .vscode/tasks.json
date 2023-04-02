@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/MrCrawler/MrCrawler.csproj",
+                "${workspaceFolder}/MarxismCrawlerConsoleConsumer/MarxismCrawlerConsoleConsumer.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/MrCrawler/MrCrawler.csproj",
+                "${workspaceFolder}/MarxismCrawlerConsoleConsumer/MarxismCrawlerConsoleConsumer.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/MrCrawler/MrCrawler.csproj"
+                "${workspaceFolder}/MarxismCrawlerConsoleConsumer/MarxismCrawlerConsoleConsumer.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

@@ -1,5 +1,6 @@
 using Adapters.Crawler.Abstractions;
 using Adapters.MarxismOrgCrawler.DataObjects;
+using Adapters.MarxismOrgCrawler.Utils;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Edge;
 
@@ -7,7 +8,8 @@ namespace Adapters.MarxismOrgCrawler.Enums
 {
     public class MarxismOrgSeleniumCrawler : SeleniumCrawler
     {
-        public MarxismOrgSeleniumCrawler(string baseUrl, string driverPath) : base(baseUrl, driverPath)
+        private readonly int AuthorPerDriver = Constants.AUTHORS_PER_DRIVER;
+        public MarxismOrgSeleniumCrawler(string baseUrl, string driverPath, int instanceNumber) : base(baseUrl, driverPath, instanceNumber)
         {
         }
 
@@ -47,8 +49,11 @@ namespace Adapters.MarxismOrgCrawler.Enums
             // Pega todos os autores do select da esquerda
             var authors = authorsSelect.Text.Split("\r\n").ToList();
 
-            // sei la pq removi, provavelmente ta pegando algo em branco ou um valor default
+            // Remove o placeholder do select
             authors.RemoveAt(0);
+
+            if(InstanceNumber > 0)
+                authors = authors.Skip( (InstanceNumber - 1) * AuthorPerDriver ).Take(AuthorPerDriver).ToList();
 
             /// Clica no select de autores
             authorsSelect.Click();
@@ -71,9 +76,6 @@ namespace Adapters.MarxismOrgCrawler.Enums
                 }
 
                 authorList.Add(authorObj);
-
-                if (authorList.Count > 0)
-                    break;
 
                 Driver.Navigate().Back();
 
@@ -132,7 +134,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
         private IEnumerable<WorkContent> GetAuthorWork(AuthorDataObject author)
         {
-            if (author?.WorkLinks.Count() == 0)
+            if (author?.WorkLinks?.Count() == 0)
                 return null;
 
             var returnList = new List<WorkContent>();
@@ -143,10 +145,10 @@ namespace Adapters.MarxismOrgCrawler.Enums
                 {
                     var workContentToBeAdded = GetFileContentByJobLink(joblink, author);
 
-                    if(workContentToBeAdded == null)
+                    if (workContentToBeAdded == null)
                         continue;
 
-                    returnList.Add(workContentToBeAdded);
+                    returnList.AddRange(workContentToBeAdded);
                 }
                 catch (System.Exception ex)
                 {
@@ -158,25 +160,26 @@ namespace Adapters.MarxismOrgCrawler.Enums
             return returnList;
         }
 
-        private WorkContent? GetFileContentByJobLink(WorkLink jobLink, AuthorDataObject author)
+        private IEnumerable<WorkContent?> GetFileContentByJobLink(WorkLink jobLink, AuthorDataObject author, WorkContent parent = null)
         {
+            if(string.IsNullOrEmpty(jobLink.Link) || !jobLink.Link.Split('/').Contains("portugues"))
+                return null;
+
             /// SIMPLE HTML
             if (jobLink.Link.Contains("htm") && !jobLink.Link.Contains("index.htm"))
             {
-                return PrepareSimpleHtmlWorkContent(jobLink, author);
+                return PrepareSimpleHtmlWorkContent(jobLink, author, parent);
             }
 
             // CHAINED HTML
             if (jobLink.Link.Contains("index.htm"))
-            {
-                return null;
-            }
+                return PrepareChainedHtmlWorkContent(jobLink, author, parent);
 
             // FILE CONTENT
             return null;
         }
 
-        private WorkContent? PrepareSimpleHtmlWorkContent(WorkLink jobLink, AuthorDataObject author)
+        private IEnumerable<WorkContent?> PrepareSimpleHtmlWorkContent(WorkLink jobLink, AuthorDataObject author, WorkContent parent = null)
         {
             try
             {
@@ -186,15 +189,14 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
                 var bodyXpath = Driver.FindElements(By.TagName("body")).FirstOrDefault();
 
-                var children = bodyXpath.FindElements(By.XPath(".//*")).ToList();
+                var children = GetMarxismoOrgContentBetweenHrTags(bodyXpath.FindElements(By.XPath(".//*")).ToList());
 
+                if(children?.Count() == 0)
+                    return null;
+                
                 var article = new Dictionary<string?, List<string?>>();
 
-                var lastHr = children.LastOrDefault(x => x.TagName == "hr");
-
-                var firstHr = children.LastOrDefault(x => x.TagName == "hr" && x.Location != lastHr.Location);
-
-                foreach (var childElement in children.Skip(children.IndexOf(firstHr)).Take(children.IndexOf(lastHr) - children.IndexOf(firstHr)))
+                foreach (var childElement in children)
                 {
                     var isTitle = CheckIfElementIsATitle(childElement);
 
@@ -217,7 +219,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
                     }
                 }
 
-                return new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, article, Enums.WorkType.HTML_SIMPLE_CONTENT);
+                return new List<WorkContent?>(){ new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, article, Enums.WorkType.HTML_SIMPLE_CONTENT, parent) };
             }
             catch (System.Exception ex)
             {
@@ -238,6 +240,57 @@ namespace Adapters.MarxismOrgCrawler.Enums
                 return true;
 
             return false;
+        }
+
+        private IEnumerable<WorkContent?> PrepareChainedHtmlWorkContent(WorkLink jobLink, AuthorDataObject author, WorkContent parent = null)
+        {
+            try
+            {
+                Driver.Url = jobLink.Link;
+
+                Driver.Navigate();
+
+                var bodyXpath = Driver.FindElements(By.TagName("body")).FirstOrDefault();
+
+                var children = GetMarxismoOrgContentBetweenHrTags(bodyXpath.FindElements(By.XPath(".//*")).ToList());
+
+                var jobLinksArticle = children.Where(x => x.TagName == "a" && x.Text != "Início da página")
+                                       .Select(x => new WorkLink(x.Text, x.GetAttribute("href")))
+                                       .ToList();
+
+                var indexWorkContent = new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, string.Empty, WorkType.HTML_CHAINED_CONTENT, parent);
+
+                var returnList = new List<WorkContent?>(){ indexWorkContent };
+
+                foreach(var jobLinkArticle in jobLinksArticle)
+                {
+                    var childArticles = GetFileContentByJobLink(jobLinkArticle, author, indexWorkContent);
+
+                    if(childArticles?.Count() == 0)
+                        continue;
+
+                    returnList.AddRange(childArticles);
+                }
+
+                return returnList;
+            }
+            catch (System.Exception ex)
+            {
+                System.Console.WriteLine($"ERRO: Erro ao buscar obra a {jobLink.Title} do autor {author.Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private IEnumerable<IWebElement?> GetMarxismoOrgContentBetweenHrTags(List<IWebElement?> webElements)
+        {
+            if (webElements?.Count() == 0)
+                return null;
+
+            var lastHr = webElements.LastOrDefault(x => x.TagName == "hr");
+
+            var firstHr = webElements.LastOrDefault(x => x.TagName == "hr" && x.Location != lastHr.Location);
+
+            return webElements.Skip(webElements.IndexOf(firstHr)).Take(webElements.IndexOf(lastHr) - webElements.IndexOf(firstHr));
         }
     }
 }
