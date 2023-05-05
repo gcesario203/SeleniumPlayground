@@ -18,26 +18,18 @@ namespace Application.Shared.Abstractions
         }
 
         public bool Equals(IBaseEntity? x, IBaseEntity? y)
-        {
-            return GetIdByReflection(x) == GetIdByReflection(y);
-        }
+            => x?.GetId() == y?.GetId();
+
 
         public int GetHashCode([DisallowNull] IBaseEntity obj)
-        {
-            return GetIdByReflection(obj)?.GetHashCode() ?? 0;
-        }
-
-        private string? GetIdByReflection(IBaseEntity? entity)
-        {
-            return entity?.GetType().GetProperty("Id")?.GetValue(entity)?.ToString() ?? null;
-        }
+            => obj?.GetId()?.GetHashCode() ?? 0;
 
         public string GetId()
             => Id;
 
         public DateTime GetCreationDate()
             => CreatedDate;
-            
+
         public DateTime GetUpdateDate()
             => UpdatedDate;
     }

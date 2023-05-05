@@ -1,11 +1,9 @@
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Adapters.Crawler.Abstractions;
 using Adapters.MarxismOrgCrawler.DataObjects;
 using Adapters.MarxismOrgCrawler.Utils;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Edge;
 
 namespace Adapters.MarxismOrgCrawler.Enums
 {
@@ -20,6 +18,13 @@ namespace Adapters.MarxismOrgCrawler.Enums
         {
             var authors = GetAuthorsAndTheirJobs();
 
+            var authorWorks = GetAllAuthorsWorks(authors);
+
+            Dispose();
+        }
+
+        private IEnumerable<WorkContent> GetAllAuthorsWorks(IEnumerable<AuthorDataObject> authors)
+        {
             var authorContents = new List<WorkContent>();
 
             foreach (var author in authors)
@@ -32,7 +37,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
                 authorContents.AddRange(parsedAuthorContents);
             };
 
-            Dispose();
+            return authorContents;
         }
 
         private IEnumerable<AuthorDataObject> GetAuthorsAndTheirJobs()
@@ -43,7 +48,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
             var authorsSelect = GetAuthorsSelectOnFirstPage();
 
             // Pega todos os autores do select da esquerda
-            var authors = authorsSelect.Text.Split("\r\n").Where(x => x == "Bakunin, Mikhail").ToList();
+            var authors = authorsSelect.Text.Split("\r\n").ToList();
 
             // Remove o placeholder do select
             // authors.RemoveAt(0);
@@ -190,7 +195,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
                 if (children?.Count() == 0)
                     return null;
 
-                var rawHtmlContent = string.Join("<br/>", children.Select(x =>$"<{x.TagName}>{x.Text}<{x.TagName}/>")
+                var rawHtmlContent = string.Join("<br/>", children.Select(x => $"<{x.TagName}>{x.Text}<{x.TagName}/>")
                                                                   .Where(x => !x.Contains("Início da página"))
                                                 );
 
