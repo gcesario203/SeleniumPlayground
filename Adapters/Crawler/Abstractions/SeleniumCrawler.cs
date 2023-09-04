@@ -7,7 +7,7 @@ namespace Adapters.Crawler.Abstractions
     {
         private readonly Type SeleniumDriverType;
         public IWebDriver Driver { get; protected set; }
-        public SeleniumCrawler(string baseUrl, string driverPath, int instanceNumber, Type seleniumDriverType) : base(baseUrl, driverPath, instanceNumber)
+        public SeleniumCrawler(string baseUrl, string driverPath, int instanceNumber, Type seleniumDriverType, int instanceQuantity) : base(baseUrl, driverPath, instanceNumber,instanceQuantity)
         {
             SeleniumDriverType = seleniumDriverType;
             SetDriver();

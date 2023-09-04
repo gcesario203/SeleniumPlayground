@@ -9,8 +9,7 @@ namespace Adapters.MarxismOrgCrawler.Enums
 {
     public class MarxismOrgSeleniumCrawler : SeleniumCrawler
     {
-        private readonly int AuthorPerDriver = Constants.AUTHORS_PER_DRIVER;
-        public MarxismOrgSeleniumCrawler(string baseUrl, string driverPath, int instanceNumber, Type seleniumDriverType) : base(baseUrl, driverPath, instanceNumber, seleniumDriverType)
+        public MarxismOrgSeleniumCrawler(string baseUrl, string driverPath, int instanceNumber, Type seleniumDriverType, int instanceQuantity) : base(baseUrl, driverPath, instanceNumber, seleniumDriverType, instanceQuantity)
         {
         }
 
@@ -42,19 +41,27 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
         private IEnumerable<AuthorDataObject> GetAuthorsAndTheirJobs()
         {
+
             /// Navega pra home do site
             Driver.Navigate();
 
             var authorsSelect = GetAuthorsSelectOnFirstPage();
 
-            // Pega todos os autores do select da esquerda
             var authors = authorsSelect.Text.Split("\r\n").ToList();
 
             // Remove o placeholder do select
-            // authors.RemoveAt(0);
+            authors.RemoveAt(0);
 
             if (InstanceNumber > 0)
-                authors = authors.Skip((InstanceNumber - 1) * AuthorPerDriver).Take(AuthorPerDriver).ToList();
+            {
+                var totalAuthors = authors.Count / InstanceQuantity;
+
+                if (InstanceNumber != InstanceQuantity)
+                    authors = authors.Skip((InstanceNumber - 1) * totalAuthors).Take(totalAuthors).ToList();
+                else
+                    authors = authors.Skip((InstanceNumber - 1) * totalAuthors).Take(totalAuthors + 1).ToList();
+            }
+
 
             /// Clica no select de autores
             authorsSelect.Click();
@@ -111,9 +118,6 @@ namespace Adapters.MarxismOrgCrawler.Enums
                      .FirstOrDefault(x => x.Text == authorName)
                      .Click();
 
-                // Pega o periodo de vida do maldito
-                var lifeYears = Driver.FindElement(By.CssSelector("div.link")).Text;
-
                 // Pega toda a biografia
                 var biography = String.Join("\n", Driver.FindElements(By.CssSelector("p.texto-sem-espaco")).Select(x => x.Text));
 
@@ -123,11 +127,11 @@ namespace Adapters.MarxismOrgCrawler.Enums
                                      .Select(x => new WorkLink(x.Text, x.GetAttribute("href")))
                                      .ToList();
 
-                return new AuthorDataObject(authorName, lifeYears, biography, jobLinks);
+                return new AuthorDataObject(HandleAuthorName(authorName), GetAuthorBirthDate(), biography, jobLinks);
             }
             catch (System.Exception ex)
             {
-                System.Console.WriteLine($"ERRO: Erro ao buscar o autor {authorName}: {ex.Message}");
+                System.Console.WriteLine($"ERRO: Erro ao buscar o autor {HandleAuthorName(authorName)}: {ex.Message}");
 
                 return null;
             }
@@ -279,6 +283,35 @@ namespace Adapters.MarxismOrgCrawler.Enums
 
             var fileWorkContent = new WorkContent(jobLink.GetId(), author.GetId(), jobLink.Title, Encoding.ASCII.GetBytes(downloadedFile), WorkType.FILE_CONTENT, parent);
             return new List<WorkContent?> { fileWorkContent };
+        }
+
+        private string HandleAuthorName(string authorName)
+        {
+            if (string.IsNullOrEmpty(authorName)) return authorName;
+
+            var splittedName = authorName.Trim().Split(",");
+
+            return $"{splittedName.LastOrDefault()} {splittedName.FirstOrDefault()}";
+        }
+
+        private string? GetAuthorBirthDate()
+        {
+            try
+            {
+                var birthDateElement = Driver.FindElement(By.CssSelector("div.data"));
+
+                if (birthDateElement != null) return birthDateElement.Text;
+
+                birthDateElement = Driver.FindElement(By.CssSelector("div.link"));
+
+                if (birthDateElement != null) return birthDateElement.Text;
+
+                return null;
+            }
+            catch (System.Exception ex)
+            {
+                return null;
+            }
         }
     }
 }
